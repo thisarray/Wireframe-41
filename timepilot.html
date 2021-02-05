@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>timepilot</title>
+  <script src="../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/biplane0.png" alt="biplane0" data-name="biplane0">
+  <img class="hidden" src="images/biplane1.png" alt="biplane1" data-name="biplane1">
+  <img class="hidden" src="images/biplane2.png" alt="biplane2" data-name="biplane2">
+  <img class="hidden" src="images/biplane3.png" alt="biplane3" data-name="biplane3">
+  <img class="hidden" src="images/biplane4.png" alt="biplane4" data-name="biplane4">
+  <img class="hidden" src="images/biplane5.png" alt="biplane5" data-name="biplane5">
+  <img class="hidden" src="images/biplane6.png" alt="biplane6" data-name="biplane6">
+  <img class="hidden" src="images/biplane7.png" alt="biplane7" data-name="biplane7">
+  <img class="hidden" src="images/bullet.png" alt="bullet" data-name="bullet">
+  <img class="hidden" src="images/cloud1.png" alt="cloud1" data-name="cloud1">
+  <img class="hidden" src="images/cloud2.png" alt="cloud2" data-name="cloud2">
+  <img class="hidden" src="images/cloud3.png" alt="cloud3" data-name="cloud3">
+  <img class="hidden" src="images/explosion1.png" alt="explosion1" data-name="explosion1">
+  <img class="hidden" src="images/explosion2.png" alt="explosion2" data-name="explosion2">
+  <img class="hidden" src="images/explosion3.png" alt="explosion3" data-name="explosion3">
+  <img class="hidden" src="images/ship0.png" alt="ship0" data-name="ship0">
+  <img class="hidden" src="images/ship1.png" alt="ship1" data-name="ship1">
+  <img class="hidden" src="images/ship2.png" alt="ship2" data-name="ship2">
+  <img class="hidden" src="images/ship3.png" alt="ship3" data-name="ship3">
+  <img class="hidden" src="images/ship4.png" alt="ship4" data-name="ship4">
+  <img class="hidden" src="images/ship5.png" alt="ship5" data-name="ship5">
+  <img class="hidden" src="images/ship6.png" alt="ship6" data-name="ship6">
+  <img class="hidden" src="images/ship7.png" alt="ship7" data-name="ship7">
+</section>
+
+<main>
+<h1>timepilot</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Attribution</h2>
+
+<p><a href="https://wireframe.raspberrypi.org/issues/41">Recreate Time Pilot's free-scrolling action, pages 64-65, by Mark Vanstone</a>.</p>
+
+<p>Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
+
+<h2>Original Python code</h2>
+
+<pre id="original"><code>
+# Time Pilot
+import pgzrun
+from random import randint
+import math
+
+gameState = 0
+ship = Actor(&#x27;ship0&#x27;,(400,300))
+biplane = Actor(&#x27;biplane0&#x27;,(200,0))
+explosion = Actor(&#x27;explosion1&#x27;,(0,0))
+ship.dir = ship.canfire = biplane.dir = explosion.frame = 0
+clouds = []
+dirs = [[0,1],[-0.7,0.7],[-1,0],[-0.7,-0.7],[0,-1],[0.7,-0.7],[1,0],[0.7,0.7]]
+for c in range(0, 20):
+    clouds.append(Actor(&#x27;cloud&#x27;+str(randint(1,3)), center=(randint(0,1000)-100, randint(0,800)-100)))
+    clouds[c].level = (c+5)/8
+bullets = []
+
+def draw():
+    screen.fill((0,150,255))
+    for b in range(len(bullets)):
+        bullets[b].draw()
+    ship.draw()
+    biplane.draw()
+    for c in range(0, 20):
+        clouds[c].draw()
+    if explosion.frame &gt; 0 and explosion.frame &lt; 10:
+        explosion.draw()
+
+
+def update():
+    global gameState
+    if gameState == 0:
+        if keyboard.left:
+            ship.dir -= 0.1
+            if ship.dir &lt; 0: ship.dir = 7.9
+        if keyboard.right:
+            ship.dir += 0.1
+            if ship.dir &gt; 7.9: ship.dir = 0
+        if keyboard.space:
+            if ship.canfire &lt;= 0: fireBullet()
+        ship.canfire -= 1
+        ship.image = &quot;ship&quot;+str(int(ship.dir))
+        myradians = math.atan2(ship.x-biplane.x, ship.y-biplane.y)
+        mydegrees = math.degrees(myradians)
+        biplane.dir = (180-mydegrees)/45
+
+        biplane.x += (dirs[int(ship.dir)][0]) - ((dirs[int(biplane.dir)][0])/2)
+        biplane.y += (dirs[int(ship.dir)][1]) - ((dirs[int(biplane.dir)][1])/2)
+        biplane.image = &quot;biplane&quot;+str(int(biplane.dir))
+        if explosion.frame &gt; 0:
+            explosion.frame += 1
+            explosion.x += (dirs[int(ship.dir)][0])
+            explosion.y += (dirs[int(ship.dir)][1])
+            if explosion.frame &lt; 10 : explosion.image = &quot;explosion&quot;+str(math.ceil(explosion.frame/3))
+        for c in range(0, 20):
+            clouds[c].x += dirs[int(ship.dir)][0]*clouds[c].level
+            if clouds[c].x &gt; 900: clouds[c].x = -100
+            if clouds[c].x &lt; -100: clouds[c].x = 900
+            clouds[c].y += dirs[int(ship.dir)][1]*clouds[c].level
+            if clouds[c].y &gt; 700: clouds[c].y = -100
+            if clouds[c].y &lt; -100: clouds[c].y = 700
+        for b in range(len(bullets)):
+            bullets[b].x -= (dirs[bullets[b].dir][0]*5) + (dirs[int(ship.dir)][0])
+            bullets[b].y -= (dirs[bullets[b].dir][1]*5) + (dirs[int(ship.dir)][1])
+            if biplane.collidepoint(bullets[b].pos) == True:
+                byplaneHit()
+
+def limit(n, minn, maxn):
+    return max(min(maxn, n), minn)
+
+def fireBullet():
+    bullets.append(Actor(&#x27;bullet&#x27;, center=(400, 300)))
+    bullets[len(bullets)-1].dir = int(ship.dir)
+    ship.canfire = 5
+
+def byplaneHit():
+    explosion.frame = 1
+    explosion.pos = biplane.pos
+    biplane.pos = (randint(0,800),0)
+
+pgzrun.go()
+</code></pre>
+</main>
+
+<script>
+// Time Pilot
+const DIRS = [[0, 1], [-0.7, 0.7], [-1, 0], [-0.7, -0.7], [0, -1], [0.7, -0.7], [1, 0], [0.7, 0.7]];
+
+var gameState, ship, biplane, explosion, clouds, bullets;
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+function reset() {
+  gameState = 0;
+  ship = new Actor('ship0');
+  ship.pos = [400, 300];
+  ship.dir = 0;
+  ship.canfire = 0;
+  biplane = new Actor('biplane0');
+  biplane.pos = [200, 0];
+  biplane.dir = 0;
+  explosion = new Actor('explosion1');
+  explosion.pos = [0, 0];
+  explosion.frame = 0;
+
+  clouds = [];
+  for (let c = 0; c < 20; c++) {
+    let cloud = new Actor('cloud' + getRandomInteger(1, 4));
+    cloud.center = [getRandomInteger(0, 1001) - 100, getRandomInteger(0, 801) - 100];
+    cloud.level = (c + 5) / 8;
+    clouds.push(cloud);
+  }
+  bullets = [];
+}
+
+function draw() {
+  screen.fill([0, 150, 255]);
+  for (let b of bullets) {
+    b.draw();
+  }
+  ship.draw();
+  biplane.draw();
+  for (let c of clouds) {
+    c.draw();
+  }
+  if ((explosion.frame > 0) && (explosion.frame < 10)) {
+    explosion.draw();
+  }
+}
+
+function update() {
+  if (gameState === 0) {
+    if (keyboard[keys.LEFT]) {
+      ship.dir -= 0.1;
+      if (ship.dir < 0) {
+        ship.dir = 7.9;
+      }
+    }
+    if (keyboard[keys.RIGHT]) {
+      ship.dir += 0.1;
+      if (ship.dir > 7.9) {
+        ship.dir = 0;
+      }
+    }
+    if (keyboard[keys.SPACE]) {
+      if (ship.canfire <= 0) {
+        fireBullet();
+      }
+    }
+    ship.canfire -= 1;
+    ship.name = "ship" + Math.trunc(ship.dir);
+    let myradians = Math.atan2(ship.posx - biplane.posx, ship.posy - biplane.posy),
+        mydegrees = myradians * 180 / Math.PI;
+    biplane.dir = (180 - mydegrees) / 45;
+
+    biplane.posx += DIRS[Math.trunc(ship.dir)][0] - (DIRS[Math.trunc(biplane.dir)][0] / 2);
+    biplane.posy += DIRS[Math.trunc(ship.dir)][1] - (DIRS[Math.trunc(biplane.dir)][1] / 2);
+    biplane.name = "biplane" + Math.trunc(biplane.dir);
+    if (explosion.frame > 0) {
+      explosion.frame += 1;
+      explosion.posx += DIRS[Math.trunc(ship.dir)][0];
+      explosion.posy += DIRS[Math.trunc(ship.dir)][1];
+      if (explosion.frame < 10) {
+        explosion.name = "explosion" + Math.ceil(explosion.frame / 3);
+      }
+    }
+    for (let c of clouds) {
+      c.posx += DIRS[Math.trunc(ship.dir)][0] * c.level;
+      if (c.posx > 900) {
+        c.posx = -100;
+      }
+      if (c.posx < -100) {
+        c.posx = 900;
+      }
+      c.posy += DIRS[Math.trunc(ship.dir)][1] * c.level;
+      if (c.posy > 700) {
+        c.posy = -100;
+      }
+      if (c.posy < -100) {
+        c.posy = 700;
+      }
+    }
+    for (let b of bullets) {
+      b.posx -= (DIRS[b.dir][0] * 5) + DIRS[Math.trunc(ship.dir)][0];
+      b.posy -= (DIRS[b.dir][1] * 5) + DIRS[Math.trunc(ship.dir)][1];
+      if (biplane.collidepoint(b.pos)) {
+        byplaneHit();
+      }
+    }
+  }
+}
+
+function limit(n, minn, maxn) {
+  return Math.max(Math.min(maxn, n), minn);
+}
+
+function fireBullet() {
+  let b = new Actor('bullet');
+  b.center = [400, 300];
+  b.dir = Math.trunc(ship.dir);
+  bullets.push(b);
+  ship.canfire = 5;
+}
+
+function byplaneHit() {
+  explosion.frame = 1;
+  explosion.pos = biplane.pos;
+  biplane.pos = [getRandomInteger(0, 801), 0];
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
